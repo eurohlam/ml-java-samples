@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="jquery.min.js"></script>
+    <!-- Load TensorFlow.js. This is required to use coco-ssd model. -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"> </script>
+    <!-- Load the coco-ssd model. -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"> </script>
+</head>
+<body>
+    <div id="main">
+        <!-- Replace this with your image. Make sure CORS settings allow reading the image! -->
+        <img id="img1" src="teddy.jpg"/>
+        <!-- Place your code in the script tag below. You can also use an external .js file -->
+    </div>
+    <script>
+        // Notice there is no 'import' statement. 'cocoSsd' and 'tf' is
+        // available on the index-page because of the script tag above.
+
+        const img1 = document.getElementById("img1");
+
+        // Load the model.
+        cocoSsd.load().then(model => {
+            // detect objects in the image.
+            model.detect(img1).then(predictions => {
+                console.log('Predictions: ', predictions);
+                predictions.forEach(prediction => showLabel(prediction));
+            });
+
+        });
+
+        function showLabel(prediction) {
+            console.log(prediction);
+            var div = '<div style="position:absolute; border-color:bisque; border-style:solid;'
+                + 'left:' + prediction.bbox[0] + 'px; top:' + prediction.bbox[1] + 'px;'
+                + 'width:' + prediction.bbox[2] + 'px; height:' + prediction.bbox[3] + 'px;">'
+                + '<h1 style="size: 15; color: magenta">' + prediction.class + '</h1><h1 style="size: 15; color: magenta">' + prediction.score + '</h1>'
+                + '</div>';
+
+            $("#main").append(div);
+        }
+    </script>
+</body>
+</html>
