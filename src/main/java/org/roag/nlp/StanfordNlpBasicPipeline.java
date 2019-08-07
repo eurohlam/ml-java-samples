@@ -8,7 +8,9 @@ import edu.stanford.nlp.semgraph.*;
 import edu.stanford.nlp.trees.*;
 import java.util.*;
 
-
+/**
+ * Copied from: https://stanfordnlp.github.io/CoreNLP/api.html
+ */
 public class StanfordNlpBasicPipeline {
 
     public static String text = "Joe Smith was born in California. " +
