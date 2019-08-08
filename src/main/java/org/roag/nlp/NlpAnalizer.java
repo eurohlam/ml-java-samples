@@ -1,13 +1,16 @@
 package org.roag.nlp;
 
+import edu.stanford.nlp.ie.util.RelationTriple;
 import edu.stanford.nlp.pipeline.*;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Created by RomanA on 7/08/2019.
+ * Created by eurohlam on 7/08/2019.
+ * Some more deep experiments with Stanford CoreNLP API
  */
 public class NlpAnalizer {
 
@@ -32,10 +35,9 @@ public class NlpAnalizer {
     public NlpAnalizer(String text) {
         Properties props = new Properties();
         // set the list of annotators to run
-//        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,parse,depparse,coref,kbp,quote");
-        props.setProperty("annotators", "tokenize,ssplit,pos,lemma, ner");
+        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,parse,depparse,coref,kbp");
         // set a property for an annotator, in this case the coref annotator is being set to use the neural algorithm
-//        props.setProperty("coref.algorithm", "neural");
+        props.setProperty("coref.algorithm", "neural");
         // build pipeline
         pipeline = new StanfordCoreNLP(props);
         document = new CoreDocument(text);
@@ -50,7 +52,7 @@ public class NlpAnalizer {
                 .stream()
                 .filter(token -> !token.ner().equals("O"))
                 .map(token -> {
-                    LOG.info("Word: " + token.originalText() + " Ner: " + token.ner() + " Tag: " + token.tag());
+                    LOG.fine("Word: " + token.originalText() + " Ner: " + token.ner() + " Tag: " + token.tag());
                     return token.ner();
                 })
                 .collect(Collectors.toList()));
@@ -58,22 +60,54 @@ public class NlpAnalizer {
         return nerTags;
     }
 
+    /**
+     * Weight of ner is how many times ner tag happens in text.
+     * @return map of ners with weights, whee key is ner and value is weight
+     */
     public Map<String, Integer> getNerWeights() {
         return getNerList()
                 .stream()
-                .collect(Collectors.toMap(key -> "" + key, value -> 1, (oldVal, newVal) -> oldVal + 1));
+                .collect(Collectors.toMap(key -> key, value -> 1, (oldVal, newVal) -> oldVal + 1));
     }
+
+    public List<RelationTriple> getKbpList() {
+        LOG.info("==== Started KBP  (relation triples) ====");
+        List<RelationTriple> relationTripleList = new ArrayList<>();
+        document
+                .sentences()
+                .forEach(
+                        s -> s.relations().forEach(r -> {
+                            LOG.fine("KBP for sentence: " + s.text());
+                            LOG.fine("KBP:" + r.toString());
+                            relationTripleList.add(r);
+                        })
+                );
+        LOG.info("==== Finished KBP ====");
+        return relationTripleList;
+    }
+
+    public void getCorefList(){
+        LOG.info("==== Started Coref ====");
+        document
+                .corefChains()
+                .forEach((k, v) -> LOG.info(k + ": " + v));
+        LOG.info("==== Finished Coref ====");
+    }
+
 
     public static void main(String[] args) {
         NlpAnalizer a = new NlpAnalizer(NlpAnalizer.text);
         //getting ner weights
-        LOG.info(a.getNerWeights().toString());
+        LOG.info("\n" + a.getNerWeights().toString() + "\n");
         //detecting the main ner (with the biggest weight)
-        a
-                .getNerWeights()
+        a.getNerWeights()
                 .entrySet()
                 .stream()
                 .max(Comparator.comparingInt(Map.Entry::getValue))
-                .ifPresent(e -> LOG.info("The main NER tag for the text is " + e.getKey() + " with weight " + e.getValue()));
+                .ifPresent(e -> LOG.info("\nThe main NER tag for the text is " + e.getKey() + " with weight " + e.getValue() +"\n"));
+        //getting kbp
+        a.getKbpList().forEach(r -> LOG.info("\n" + r.toString() + "\n"));
+        //getting coref
+        a.getCorefList();
     }
 }
