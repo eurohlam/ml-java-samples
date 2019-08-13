@@ -4,17 +4,17 @@ import edu.stanford.nlp.ie.util.RelationTriple;
 import edu.stanford.nlp.pipeline.*;
 
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Created by eurohlam on 7/08/2019.
  * Some more deep experiments with Stanford CoreNLP API
  */
-public class NlpAnalizer {
+public class StanfordNlpAnalyzer {
 
-    private static final Logger LOG = Logger.getLogger(NlpAnalizer.class.getName());
+    private static final Logger LOG = LogManager.getLogger(StanfordNlpAnalyzer.class);
 
     private static final String text = "Marley was dead: to begin with. There is no doubt whatever about that. " +
             "The register of his burial was signed by the clergyman, the clerk, the undertaker, and the chief mourner. " +
@@ -32,7 +32,7 @@ public class NlpAnalizer {
     private StanfordCoreNLP pipeline;
     private CoreDocument document;
 
-    public NlpAnalizer(String text) {
+    public StanfordNlpAnalyzer(String text) {
         Properties props = new Properties();
         // set the list of annotators to run
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,parse,depparse,coref,kbp");
@@ -44,6 +44,13 @@ public class NlpAnalizer {
         pipeline.annotate(document);
     }
 
+    /**
+     * NER - Named Entity Recognition.
+     * For English, by default, the annotator (ner) recognizes named (PERSON, LOCATION, ORGANIZATION, MISC),
+     * numerical (MONEY, NUMBER, ORDINAL, PERCENT), and temporal (DATE, TIME, DURATION, SET) entities (12 classes).
+     * If entity was not recognized then it is marked with "O"
+     * @return list of NER excluding "O"
+     */
     public List<String> getNerList() {
         LOG.info("==== Started NER (Named Entity Recognition) ====");
         List<String> nerTags = new ArrayList<>();
@@ -52,7 +59,7 @@ public class NlpAnalizer {
                 .stream()
                 .filter(token -> !token.ner().equals("O"))
                 .map(token -> {
-                    LOG.fine("Word: " + token.originalText() + " Ner: " + token.ner() + " Tag: " + token.tag());
+                    LOG.debug("Entity: " + token.originalText() + " Ner: " + token.ner() + " Tag: " + token.tag());
                     return token.ner();
                 })
                 .collect(Collectors.toList()));
@@ -61,8 +68,8 @@ public class NlpAnalizer {
     }
 
     /**
-     * Weight of ner is how many times ner tag happens in text.
-     * @return map of ners with weights, whee key is ner and value is weight
+     * Weight of NER is how many times NER tag happens in text.
+     * @return map of NERs with weights, where NER is a key and weight of NER is a value
      */
     public Map<String, Integer> getNerWeights() {
         return getNerList()
@@ -70,6 +77,14 @@ public class NlpAnalizer {
                 .collect(Collectors.toMap(key -> key, value -> 1, (oldVal, newVal) -> oldVal + 1));
     }
 
+    /**
+     * KBP is Knowledge Base Population.
+     * For example when run on the input sentence:
+     *  Joe Smith was born in Oregon.
+     * The annotator will find the following ("subject", "relation", "object") triple:
+     *  ("Joe Smith", "per:stateorprovince_of_birth", "Oregon" }
+     * @return list of {@RelationTriple}
+     */
     public List<RelationTriple> getKbpList() {
         LOG.info("==== Started KBP  (relation triples) ====");
         List<RelationTriple> relationTripleList = new ArrayList<>();
@@ -77,8 +92,8 @@ public class NlpAnalizer {
                 .sentences()
                 .forEach(
                         s -> s.relations().forEach(r -> {
-                            LOG.fine("KBP for sentence: " + s.text());
-                            LOG.fine("KBP:" + r.toString());
+                            LOG.debug("KBP for sentence: " + s.text());
+                            LOG.debug("KBP:" + r.toString());
                             relationTripleList.add(r);
                         })
                 );
@@ -86,6 +101,9 @@ public class NlpAnalizer {
         return relationTripleList;
     }
 
+    /**
+     * The CorefAnnotator finds mentions of the same entity in a text, such as when “Theresa May” and “she” refer to the same person.
+     */
     public void getCorefList(){
         LOG.info("==== Started Coref ====");
         document
@@ -96,9 +114,9 @@ public class NlpAnalizer {
 
 
     public static void main(String[] args) {
-        NlpAnalizer a = new NlpAnalizer(NlpAnalizer.text);
+        StanfordNlpAnalyzer a = new StanfordNlpAnalyzer(StanfordNlpAnalyzer.text);
         //getting ner weights
-        LOG.info("\n" + a.getNerWeights().toString() + "\n");
+        LOG.info("NER weights:\n" + a.getNerWeights().toString() + "\n");
         //detecting the main ner (with the biggest weight)
         a.getNerWeights()
                 .entrySet()

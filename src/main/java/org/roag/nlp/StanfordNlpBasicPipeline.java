@@ -21,14 +21,6 @@ public class StanfordNlpBasicPipeline {
             "After hearing about Joe's trip, Jane decided she might go to France one day.";
 
 
-/*
-    public static final String text ="A man from the US state of Florida who admitted sending inoperative pipe bombs " +
-            "to prominent Democrats and critics of US President Donald Trump has been sentenced to 20 years in prison." +
-            "Cesar Sayoc, 57, wept and crossed himself when District Judge Jed S Rakoff announced the sentence on Monday. " +
-            "Sayoc earlier this year had pleaded guilty to explosives charges for mailing 16 pipe bombs days before the midterm elections last year." +
-            "The one-time stripper and pizza delivery man from Aventura apologised to his victims, saying he was \"so very sorry for what I did\".";
-*/
-
     public static void main(String[] args) {
         // set up pipeline properties
         Properties props = new Properties();
