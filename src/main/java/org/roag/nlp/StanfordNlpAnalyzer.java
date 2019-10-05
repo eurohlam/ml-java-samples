@@ -59,7 +59,7 @@ public class StanfordNlpAnalyzer {
                 .stream()
                 .filter(token -> !token.ner().equals("O"))
                 .map(token -> {
-                    LOG.debug("Entity: " + token.originalText() + " Ner: " + token.ner() + " Tag: " + token.tag());
+                    LOG.debug("Entity: {} Ner: {} Tag: {}", token.originalText(), token.ner(), token.tag());
                     return token.ner();
                 })
                 .collect(Collectors.toList()));
@@ -92,8 +92,8 @@ public class StanfordNlpAnalyzer {
                 .sentences()
                 .forEach(
                         s -> s.relations().forEach(r -> {
-                            LOG.debug("KBP for sentence: " + s.text());
-                            LOG.debug("KBP:" + r.toString());
+                            LOG.debug("KBP for sentence: {}", s.text());
+                            LOG.debug("KBP: {}", r.toString());
                             relationTripleList.add(r);
                         })
                 );
@@ -116,15 +116,15 @@ public class StanfordNlpAnalyzer {
     public static void main(String[] args) {
         StanfordNlpAnalyzer a = new StanfordNlpAnalyzer(StanfordNlpAnalyzer.text);
         //getting ner weights
-        LOG.info("NER weights:\n" + a.getNerWeights().toString() + "\n");
+        LOG.info("NER weights:\n{}\n" , a.getNerWeights());
         //detecting the main ner (with the biggest weight)
         a.getNerWeights()
                 .entrySet()
                 .stream()
                 .max(Comparator.comparingInt(Map.Entry::getValue))
-                .ifPresent(e -> LOG.info("\nThe main NER tag for the text is " + e.getKey() + " with weight " + e.getValue() +"\n"));
+                .ifPresent(e -> LOG.info("\nThe main NER tag for the text is {} with weight {}\n",e.getKey(), e.getValue() ));
         //getting kbp
-        a.getKbpList().forEach(r -> LOG.info("\n" + r.toString() + "\n"));
+        a.getKbpList().forEach(r -> LOG.info("\n{}\n", r.toString()));
         //getting coref
         a.getCorefList();
     }

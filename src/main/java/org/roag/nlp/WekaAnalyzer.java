@@ -13,7 +13,7 @@ import weka.dl4j.updater.Adam;
 import java.io.FileReader;
 import java.util.Random;
 
-public class WekaNlpAnalyzer {
+public class WekaAnalyzer {
 
     public static void main(String[] args) {
         try {
@@ -23,7 +23,7 @@ public class WekaNlpAnalyzer {
             clf.setSeed(1);
 
 // Load the iris dataset and set its class index
-            Instances data = new Instances(new FileReader("/Users/eurohlam/IdeaProjects/wekaDeeplearning4j/datasets/nominal/iris.arff"));
+            Instances data = new Instances(new FileReader("src/main/resources/data/iris.arff"));
             data.setClassIndex(data.numAttributes() - 1);
 
 // Define the output layer
