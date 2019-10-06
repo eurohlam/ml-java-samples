@@ -1,11 +1,11 @@
 package org.roag.nlp;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.evaluation.Evaluation;
 import weka.classifiers.functions.Dl4jMlpClassifier;
+import weka.classifiers.trees.HoeffdingTree;
 import weka.core.Instances;
 import weka.dl4j.NeuralNetConfiguration;
 import weka.dl4j.activations.ActivationSoftmax;
@@ -14,7 +14,6 @@ import weka.dl4j.layers.OutputLayer;
 import weka.dl4j.lossfunctions.LossMCXENT;
 import weka.dl4j.updater.Adam;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Random;
@@ -103,7 +102,22 @@ public class WekaAnalyzer {
         return this;
     }
 
-    public void hoeffdingTree() {
+    public WekaAnalyzer hoeffdingTree() throws Exception{
+        HoeffdingTree hoeffdingTree = new HoeffdingTree();
+        hoeffdingTree.buildClassifier(trainData);
+        LOG.info(" ====== HOEFFDING TREE PREDICTIONS =====");
+        getTestDataset().forEach(
+                i -> {
+                    try {
+                        LOG.info("Prediction for instance {}: {}",
+                                i.stringValue(i.numAttributes() - 1),
+                                hoeffdingTree.classifyInstance(i));
+                    } catch (Exception e) {
+                        LOG.error(e);
+                    }
+                }
+        );
+        return this;
 
     }
 
@@ -112,6 +126,7 @@ public class WekaAnalyzer {
             new WekaAnalyzer("src/main/resources/data/weka_vote.arff",
                     "src/main/resources/data/weka_vote_test.arff")
                     .naiveBayes()
+                    .hoeffdingTree()
                     .deepLearning();
 
         } catch (Exception e) {
