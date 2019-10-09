@@ -2,14 +2,16 @@ package org.roag.nlp;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import weka.classifiers.AbstractClassifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.evaluation.Evaluation;
 import weka.classifiers.functions.Dl4jMlpClassifier;
 import weka.classifiers.trees.HoeffdingTree;
+import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.LogConfiguration;
 import weka.dl4j.NeuralNetConfiguration;
 import weka.dl4j.activations.ActivationSoftmax;
-import weka.dl4j.layers.Layer;
 import weka.dl4j.layers.OutputLayer;
 import weka.dl4j.lossfunctions.LossMCXENT;
 import weka.dl4j.updater.Adam;
@@ -32,7 +34,7 @@ public class WekaAnalyzer {
 
     private Instances getDataset(String path) throws IOException {
         Instances data = new Instances(new FileReader(path));
-        data.setClassIndex(data.numAttributes() - 1);
+        data.setClassIndex(data.numAttributes() - 1);//we suppose that the last field is always a class
         return data;
     }
 
@@ -60,64 +62,70 @@ public class WekaAnalyzer {
         neuralNetConfiguration.setUpdater(new Adam());
 
         // Add the layers to the classifier
-        dl4jMlpClassifier.setLayers(new Layer[]{outputLayer});
+        dl4jMlpClassifier.setLayers(outputLayer);
         dl4jMlpClassifier.setNeuralNetConfiguration(neuralNetConfiguration);
 
+
+        LOG.info("====== DEEP LEARNING TRAINING RESULTS ========");
         // Evaluate the network
         Evaluation trainEval = new Evaluation(getTrainDataset());
         int numFolds = 5;
         trainEval.crossValidateModel(dl4jMlpClassifier, getTrainDataset(), numFolds, new Random(1));
-
-        LOG.info("====== DEEP LEARNING TRAINING RESULTS ========");
         LOG.info(trainEval.toSummaryString());
-        trainEval.predictions().forEach(
-                p -> LOG.info("Predictions: actual: {}; predicted: {}", p.actual(), p.predicted())
-        );
 
 
         LOG.info("====== DEEP LEARNING PREDICTIONS ========");
-        //TODO: it does not work
+        dl4jMlpClassifier.buildClassifier(getTrainDataset());
         Evaluation testEval = new Evaluation(getTrainDataset());
-        testEval.evaluateModelOnce(dl4jMlpClassifier, testData.instance(0));
+        testEval.evaluateModel(dl4jMlpClassifier, getTestDataset());
         LOG.info(testEval.toSummaryString());
+
+        //TODO: why classifyIt does not work for dl4j?
+        //classifyIt(dl4jMlpClassifier);
+        testEval.evaluateModelOnceAndRecordPrediction(dl4jMlpClassifier, getTestDataset().get(0));
+        LOG.info(testEval.toSummaryString());
+        LOG.info("Correct: {}; Incorrect: {}", testEval.pctCorrect(), testEval.pctIncorrect());
+        testEval.predictions().forEach(
+                p -> LOG.info("Predictions: actual: {}; predicted: {}", p.actual(), p.predicted())
+        );
         return this;
     }
 
     public WekaAnalyzer naiveBayes() throws Exception {
         NaiveBayes naiveBayes = new NaiveBayes();
         naiveBayes.buildClassifier(getTrainDataset());
-
         LOG.info(" ====== NAIVE BAYES PREDICTIONS =====");
-        getTestDataset().forEach(
-                i -> {
-                    try {
-                        LOG.info("Prediction for instance {}: {}",
-                                i.stringValue(i.numAttributes() - 1),
-                                naiveBayes.classifyInstance(i));
-                    } catch (Exception e) {
-                        LOG.error(e);
-                    }
-                }
-        );
+        Evaluation testEval = new Evaluation(getTrainDataset());
+        testEval.evaluateModel(naiveBayes, getTestDataset());
+        LOG.info(testEval.toSummaryString());
+        classifyIt(naiveBayes);
         return this;
     }
 
-    public WekaAnalyzer hoeffdingTree() throws Exception{
+    public WekaAnalyzer hoeffdingTree() throws Exception {
         HoeffdingTree hoeffdingTree = new HoeffdingTree();
         hoeffdingTree.buildClassifier(trainData);
         LOG.info(" ====== HOEFFDING TREE PREDICTIONS =====");
-        getTestDataset().forEach(
-                i -> {
-                    try {
-                        LOG.info("Prediction for instance {}: {}",
-                                i.stringValue(i.numAttributes() - 1),
-                                hoeffdingTree.classifyInstance(i));
-                    } catch (Exception e) {
-                        LOG.error(e);
-                    }
-                }
-        );
+        Evaluation testEval = new Evaluation(getTrainDataset());
+        testEval.evaluateModel(hoeffdingTree, getTestDataset());
+        LOG.info(testEval.toSummaryString());
+        classifyIt(hoeffdingTree);
         return this;
+
+    }
+
+    private void classifyIt(AbstractClassifier classifier) throws Exception {
+        int idx = 0;
+        for (Instance i : getTestDataset()) {
+            double label = classifier.classifyInstance(i);
+            LOG.info("{} - Prediction for instance {}: {} ({}) {}",
+                    idx++,
+                    i.stringValue(i.numAttributes() - 1),
+                    i.classAttribute().value((int) label),
+                    label,
+                    i.classValue()
+            );
+        }
 
     }
 
