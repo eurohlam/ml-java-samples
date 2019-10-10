@@ -11,7 +11,9 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.LogConfiguration;
 import weka.dl4j.NeuralNetConfiguration;
+import weka.dl4j.activations.ActivationReLU;
 import weka.dl4j.activations.ActivationSoftmax;
+import weka.dl4j.layers.DenseLayer;
 import weka.dl4j.layers.OutputLayer;
 import weka.dl4j.lossfunctions.LossMCXENT;
 import weka.dl4j.updater.Adam;
@@ -38,11 +40,11 @@ public class WekaAnalyzer {
         return data;
     }
 
-    public Instances getTestDataset() throws IOException {
+    public Instances getTestDataset() {
         return testData;
     }
 
-    public Instances getTrainDataset() throws IOException {
+    public Instances getTrainDataset() {
         return trainData;
     }
 
@@ -53,6 +55,10 @@ public class WekaAnalyzer {
         // Set a seed for reproduceable results
         dl4jMlpClassifier.setSeed(1);
 
+        DenseLayer denseLayer = new DenseLayer();
+        denseLayer.setNOut(10);
+        denseLayer.setActivationFunction(new ActivationReLU());
+
         // Define the output layer
         OutputLayer outputLayer = new OutputLayer();
         outputLayer.setActivationFunction(new ActivationSoftmax());
@@ -62,7 +68,7 @@ public class WekaAnalyzer {
         neuralNetConfiguration.setUpdater(new Adam());
 
         // Add the layers to the classifier
-        dl4jMlpClassifier.setLayers(outputLayer);
+        dl4jMlpClassifier.setLayers(denseLayer, outputLayer);
         dl4jMlpClassifier.setNeuralNetConfiguration(neuralNetConfiguration);
 
 
@@ -81,7 +87,8 @@ public class WekaAnalyzer {
         LOG.info(testEval.toSummaryString());
 
         //TODO: why classifyIt does not work for dl4j?
-        //classifyIt(dl4jMlpClassifier);
+        classifyIt(dl4jMlpClassifier);
+        LOG.info("===============================");
         testEval.evaluateModelOnceAndRecordPrediction(dl4jMlpClassifier, getTestDataset().get(0));
         LOG.info(testEval.toSummaryString());
         LOG.info("Correct: {}; Incorrect: {}", testEval.pctCorrect(), testEval.pctIncorrect());
@@ -118,12 +125,12 @@ public class WekaAnalyzer {
         int idx = 0;
         for (Instance i : getTestDataset()) {
             double label = classifier.classifyInstance(i);
-            LOG.info("{} - Prediction for instance {}: {} ({}) {}",
+            LOG.info("{} - Prediction for instance {} ({}): {} ({})",
                     idx++,
                     i.stringValue(i.numAttributes() - 1),
+                    i.classValue(),
                     i.classAttribute().value((int) label),
-                    label,
-                    i.classValue()
+                    label
             );
         }
 
