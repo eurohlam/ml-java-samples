@@ -22,4 +22,9 @@ As of now it is not provided in any maven repository, therefore you need to inst
     git clone https://github.com/Waikato/wekaDeeplearning4j.git
     cd wekaDeeplearning4j
     ./gradlew build -x test publishToMavenLocal
-       
+    
+### How to run
+    
+    mvn exec:java
+
+it will run WekaAnalizer class       

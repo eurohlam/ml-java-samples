@@ -9,7 +9,6 @@ import weka.classifiers.functions.Dl4jMlpClassifier;
 import weka.classifiers.trees.HoeffdingTree;
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.LogConfiguration;
 import weka.dl4j.NeuralNetConfiguration;
 import weka.dl4j.activations.ActivationReLU;
 import weka.dl4j.activations.ActivationSoftmax;
