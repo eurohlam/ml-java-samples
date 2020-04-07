@@ -4,6 +4,17 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-30.30c{1} %-5p %m%n"/>
         </Console>
+        <RollingFile name="RollingFileByDateAndSize" fileName="ml-app.log"
+                     filePattern="ml-app-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout>
+                <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="7"/>
+        </RollingFile>
     </Appenders>
     <Loggers>
         <Root level="INFO">
@@ -11,6 +22,9 @@
         </Root>
         <Logger name="weka" level="INFO">
             <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.roag.nlp">
+            <AppenderRef ref="RollingFileByDateAndSize"/>
         </Logger>
     </Loggers>
 </Configuration>
